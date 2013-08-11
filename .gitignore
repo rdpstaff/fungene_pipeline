@@ -1,0 +1,12 @@
+*~
+#*#
+*.pyc
+test/
+config_office.ini
+config_pssb.ini
+config.ini
+.svn
+*.stk
+*.sto
+*.bin
+*.idx
