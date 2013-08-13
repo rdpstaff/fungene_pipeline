@@ -24,8 +24,7 @@ def check_seq_counts_file(seq_file):
 	return total_seqs
 
 def send_mail(email_address, subject, mail_file):
-	cmd = ["cafe", "-Dmail.smtp.localhost=comet.cme.msu.edu", "-Dmail.smtp.host=mail.msu.edu", "-Dmail.smtp.auth=true", "-Dmail.smtp.socketFactory.class=javax.net.ssl.SSLSocketFactory", "-Dmail.smtp.socketFactory.fallback=false", "-Dmail.smtp.socketFactory.port=465", "-Dmail.smtp.port=465", "-Dedu.msu.cme.rdp.myrdp.username=rdpstaff", "-Dedu.msu.cme.rdp.myrdp.password=g77zagiSweep", mail_wrapper_class, "--to_email", email_address, "--subject_name", subject, "--message_file", mail_file]
-	subprocess.call(cmd)
+	pass
 
 def main(options_file, command_file, infiles):
 	seq_files = []
