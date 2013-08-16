@@ -1,0 +1,8 @@
+dereplicate	unaligned
+framebot	glocal	80	0.4
+refresh_mapping
+explode_mapping	filtered_sequences
+align
+dereplicate	aligned	#=GC_RF
+distance	0.3	
+cluster	complete	0.01

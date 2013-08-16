@@ -1,0 +1,5 @@
+Region	Bar Code Name	Bar Code Sequence	Target Name	Target Sequence	Sample name	Gene	Reverse Primer name	Reverse Primer Sequence	control
+1	MID1	tgtcgtcgca	16S_577_f	AYTGGGYDTAAAGNG	Native_1_4_A	16S	16S_926_r	CCGTCAATTCMTTTRAGT	no
+1	MID2	acagtcgtgc	16S_577_f	AYTGGGYDTAAAGNG	USGA_2_7_A	16S	16S_926_r	CCGTCAATTCMTTTRAGT	no
+1	MID3	actcatctac	16S_577_f	AYTGGGYDTAAAGNG	Native_2_7_A	16S	16S_926_r	CCGTCAATTCMTTTRAGT	no
+1	MID4	actcgcgcac	16S_577_f	AYTGGGYDTAAAGNG	USGA_2_4_B	16S	16S_926_r	CCGTCAATTCMTTTRAGT	no

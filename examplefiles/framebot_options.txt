@@ -1,0 +1,8 @@
+nifh
+/path/to/output_dir
+/path/to/output_dir/pipeline-job
+youremail@domain
+/home/wangqion/Desktop/status.txt
+/path/to/output_dir/pipeline-job.tgz
+/path/to/output_dir/mail_message.txt
+

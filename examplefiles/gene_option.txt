@@ -1,0 +1,28 @@
+[general]
+genes_of_interest = 16s,nifh
+fedit=2
+redit=0
+min_length=300
+max_ns = 0
+min_qual=20
+keep_primers = false
+seq_file_pattern = .TCA.454Reads.fna
+qual_file_pattern = .TCA.454Reads.qual
+process_notag = false
+default_fprimer = fake
+default_rprimer = fake
+use_reverse = true
+
+[16s]
+nucl_control=/path/to/control/mock_community_slice/mock_community_slice.fa
+prot_control=/path/to/control/mock_community_slice/
+
+
+[nifh]
+gene_name = nifh
+redit=1
+min_qual = 20
+framebot_ref_ident=.3
+framebot_minlength=100
+
+

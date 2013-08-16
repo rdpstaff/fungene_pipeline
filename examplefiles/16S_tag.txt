@@ -1,0 +1,4 @@
+tgtcgtcgca	Native_1_4_A
+acagtcgtgc	USGA_2_7_A
+actcatctac	Native_2_7_A
+actcgcgcac	USGA_2_4_B
