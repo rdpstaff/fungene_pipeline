@@ -1,0 +1,7 @@
+16s
+/path/to/output_dir
+/path/to/output_dir/results
+youremail@domain
+/path/to/output_dir/status.txt
+/path/to/output_dir/pipeline-job.tgz
+/path/to/output_dir/mail_message.txt

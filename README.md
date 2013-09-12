@@ -38,7 +38,7 @@ See the complete list of commands in `fgp_wrapper.py`.
 
 #### Pipeline with command and options file
 
-* Here is an example command to run Initial Process, Alignment and Clustering using `fgp_wrapper.py`. 
+* Here is an example command to run Initial Process, Chimera Check, Alignment and Clustering using `fgp_wrapper.py`. 
 Modify the file `16S_options.txt` with the correct path to the output directory on your local machine and your email address before run the command:
 	
 		/path/to/fungene_pipeline/fgp_wrapper.py /path/to/fungene_pipeline/examplefiles/16S_options.txt /path/to/fungene_pipeline/examplefiles/init_cluster_commands.txt 
