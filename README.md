@@ -50,11 +50,16 @@ to the output directory on your local machine and your email address before run 
 		/path/to/fungene_pipeline/fgp_wrapper.py /path/to/fungene_pipeline/examplefiles/framebot_options.txt /path/to/fungene_pipeline/examplefiles/framebot_commands.txt  
 		/path/to/fungene_pipeline/examplefiles/nifH_s1.fa  /path/to/fungene_pipeline/examplefiles/nifH_s2.fa 
 
-* Another example command that runs FrameBot and Clustering using `fgp_wrapper.py`. 
+* An example command that runs FrameBot and Clustering using `fgp_wrapper.py`. 
 
-		/path/tofungene_pipeline/fgp_wrapper.py /path/tofungene_pipeline/examplefiles/framebot_options.txt /path/tofungene_pipeline/examplefiles/framebot_cluster_commands.txt 
-		/path/tofungene_pipeline/examplefiles/nifH_s1.fa /path/tofungene_pipeline/examplefiles/nifH_s2.fa
+		/path/tofungene_pipeline/fgp_wrapper.py /path/to/fungene_pipeline/examplefiles/framebot_options.txt /path/to/fungene_pipeline/examplefiles/framebot_cluster_commands.txt 
+		/path/to/fungene_pipeline/examplefiles/nifH_s1.fa /path/to/fungene_pipeline/examplefiles/nifH_s2.fa
 
+* An example command that runs ChimeraCheck using `fgp_wrapper.py`. 
+
+		/path/tofungene_pipeline/fgp_wrapper.py /path/to/fungene_pipeline/examplefiles/chimeracheck_option.txt /path/to/fungene_pipeline/examplefiles/chimeracheck_command.txt 
+		/path/to/fungene_pipeline/examplefiles/1.TCA.454Reads.fna
+		
 #### With run descriptor file
 * As mentioned above, the run descriptor file allows you to specify mapping for multiple barcodes at different regions in an entire sequencing run. 
 Here is an example command that first runs Initial Process which splits and filters the samples by barcode, and then for each barcoded-file, runs

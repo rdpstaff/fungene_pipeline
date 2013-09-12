@@ -1,5 +1,6 @@
-init_proc	AYTGGGYDTAAAGNG	2	300	0	20	/work/wangqion/github/fungene_pipeline/examplefiles/16S_tag.txt 	false	false	CCGTCAATTCMTTTRAGT	0
+init_proc	AYTGGGYDTAAAGNG	2	300	0	20	/path/to/fungene_pipeline/examplefiles/16S_tag.txt 	false	false	CCGTCAATTCMTTTRAGT	0
 dereplicate	unaligned
+chimera_check
 align
 distance	0.20	#=GC_RF
 cluster	complete	0.01	
