@@ -716,7 +716,7 @@ def align(in_seq_files, gene_name, workdir = os.getcwd(), trace = sys.stderr):
 	if not check_unique_files(in_seq_files):
 		raise Exception("I won't overwrite output files, two input files have the same name. " + ", ".join(in_seq_files))
 
-	if gene_name == "16s" or gene_name == "archaea16s" or gene_name == "fungi28s":
+	if gene_name == "16s" or gene_name == "RRNA_16S_BACTERIA" or gene_name == "RRNA_16S_ARCHAEA" or gene_name == "RRNA_28S":
 		align_cmd = cmalign
 		model = os.path.join(os.path.join(resources_dir, gene_name), "model.cm")		
 	else:
@@ -746,8 +746,9 @@ def align(in_seq_files, gene_name, workdir = os.getcwd(), trace = sys.stderr):
 			split_out_file = os.path.join(seq_dir, os.path.split(split)[1] + ".out")
 
 			cmd = [align_cmd]
-			if gene_name == "16s" or gene_name == "archaea16s" or gene_name == "fungi28s":
-				cmd.append("-g").append("--noprob")
+			if gene_name == "16s" or gene_name == "RRNA_16S_BACTERIA" or gene_name == "RRNA_16S_ARCHAEA" or gene_name == "RRNA_28S":
+				# for Infernal 1.1
+				cmd.extend(["-g","--noprob"])
 			else:
 				cmd.append("--allcol")
 
