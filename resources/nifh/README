@@ -1,1 +1,4 @@
 Model and reference sequences obtained from fungene, >95% coverage, aligned and model built 20 times to smooth variance
+
+framebot.fasta contains the nifH region flanked by Poly primers
+framebot_full_nifh.fasta contains the full nifH region

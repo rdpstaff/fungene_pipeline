@@ -64,8 +64,19 @@ cluster_main_class = "edu.msu.cme.pyro.cluster.ClusterMain"
 jaccard_sorensen_class = "edu/msu/cme/rdp/abundstats/cli/AbundMain"
 shannon_chao_class = "edu/msu/cme/rdp/abundstats/ShannonChao"
 rarefaction_class = "edu/msu/cme/rdp/rarefaction/Rarefaction"
-aligner_stats_class = "edu/msu/cme/rdp/pyro/stats/AlignerStats"
-cluster_stats_class = "edu/msu/cme/rdp/pyro/stats/ClusterStats"
+aligner_stats_class = "edu/msu/cme/pyro/stats/AlignerStats"
+cluster_stats_class = "edu/msu/cme/pyro/stats/ClusterStats"
+
+DEVNULL = open(os.devnull, 'wb')
+cafe_check = subprocess.call(["which", "-s", "cafe"], stdout = DEVNULL, stderr = DEVNULL)
+
+if cafe_check != 0:
+    init_process_class_jar = config.get("pipeline", "process_class_jar")
+    cluster_class_jar = config.get("pipeline", "cluster_jar")
+    framebot_jar = config.get("pipeline", "framebot_jar")
+    align_tools_jar = config.get("pipeline", "alignment_tools_jar")
+    abundance_stats_jar = config.get("pipeline", "abundance_jar")
+
 
 """
 	Our classes!
@@ -131,6 +142,7 @@ def run_commands(cmds, trace, distributed=False, workdir=os.getcwd()):
 	jobs complete
 	"""
 	jids = []
+	
 	for cmd in cmds:
 		if distributed and distribute_jobs:
 			qsub = ["qsub", "-terse", "-b", "y", "-wd", workdir, "-v", "PATH=%s" % qsub_path]
@@ -178,12 +190,23 @@ def split_seq_file(f, max_seqs, workdir, suffix):
 	file_count = 0
 	ret_files = []
 	seqs = []
-	for seq in SeqIO.parse(open(f), "fasta"):
+
+	stream = open(f)
+	first_char = stream.read(1)
+	if first_char == "@":
+		format = "fastq"
+	elif first_char == ">":
+		format = "fasta"
+	else:
+		raise IOError("Couldn't detect file type from {0}".format(first_char))
+	stream.close()
+
+	for seq in SeqIO.parse(open(f), format):
 		seqs.append(seq)
 		if len(seqs) > max_seqs:
 			out_file = os.path.join(workdir, str(file_count) + "_" + suffix)
 			out = open(out_file, "w")
-			SeqIO.write(seqs, out, "fasta")
+			SeqIO.write(seqs, out, format)
 			out.close()
 			seqs = []
 			ret_files.append(out_file)
@@ -192,7 +215,7 @@ def split_seq_file(f, max_seqs, workdir, suffix):
 	if len(seqs) > 0:
 		out_file = os.path.join(workdir, str(file_count) + "_" + suffix)
 		out = open(out_file, "w")
-		SeqIO.write(seqs, out, "fasta")
+		SeqIO.write(seqs, out, format)
 		out.close()
 		file_count = file_count + 1
 		ret_files.append(out_file)
@@ -285,8 +308,12 @@ def init_process(seq_files, tag_file, forward_primers, fedit = 2, reverse_primer
 		raise ValueError("Initial process can only handle one sequence file at this time")
 	
 	seq_file = seq_files[0]
+
+	if cafe_check == 0:
+		cmd = ["cafe", "-Xmx1g", init_process_class, "--forward-primers", forward_primers, "--min-length", min_length, "--max-ns", max_ns, "--max-forward", fedit, "--outdir", workdir, "--seq-file", seq_file.seq_file, "--tag-file", tag_file, "--result-dir-name", init_proc_dir_name, "--min-qual", min_qual]
+	else:
+		cmd = ["java", "-Xmx1g", "-jar", init_process_class_jar, "--forward-primers", forward_primers, "--min-length", min_length, "--max-ns", max_ns, "--max-forward", fedit, "--outdir", workdir, "--seq-file", seq_file.seq_file, "--tag-file", tag_file, "--result-dir-name", init_proc_dir_name, "--min-qual", min_qual]
 	
-	cmd = ["cafe", "-Xmx1g", init_process_class, "--forward-primers", forward_primers, "--min-length", min_length, "--max-ns", max_ns, "--max-forward", fedit, "--outdir", workdir, "--seq-file", seq_file.seq_file, "--tag-file", tag_file, "--result-dir-name", init_proc_dir_name, "--min-qual", min_qual]
 	if reverse_primers:
 		cmd.extend(["--reverse-primers", reverse_primers, "-max-reverse", redit])
 	if keep_primers:
@@ -295,7 +322,8 @@ def init_process(seq_files, tag_file, forward_primers, fedit = 2, reverse_primer
 		cmd.append("--skip-notag")
 
 	cmd.append("--gene-name")
-	if gene_name == "RRNA_16S_BACTERIA" or gene_name == "RRNA_16S_ARCHAEA" or gene_name == "RRNA_28S":
+	genes = ["RRNA_16S_BACTERIA", "RRNA_16S_ARCHAEA", "RRNA_18S", "RRNA_23S", "RRNA_28S"]
+	if gene_name in genes:
 		cmd.append(gene_name)
 	else:
 		cmd.append("OTHER")
@@ -304,7 +332,7 @@ def init_process(seq_files, tag_file, forward_primers, fedit = 2, reverse_primer
 		cmd.extend(["--qual-file", seq_file.qual_file])
 
 	run_commands([Command(cmd)], trace)
-	shutil.rmtree(os.path.join(workdir, "tag_sort"))
+	shutil.rmtree(os.path.join(workdir, "tagsort_dir"), ignore_errors = True)
 
 	seq_files = []
 	init_proc_dir = os.path.join(workdir, init_proc_dir_name)
@@ -342,7 +370,7 @@ def error_calc(in_seq_files, nucl_ref_file, workdir = os.getcwd(), trace = sys.s
 		
 		for split in split_in_files:
 			split_align_out_file = os.path.join(split_dir, os.path.split(split)[1] + "_alignments.txt")
-			split_mismatch_out_file = os.path.join(split_dir, os.path.split(split)[1] + "_mismatch.txt")
+			split_mismatch_out_file = os.path.join(split_dir, os.path.split(split)[1] + "_mismatches.txt")
 			split_indel_out_file = os.path.join(split_dir, os.path.split(split)[1] + "_indels.txt")
 			split_qual_out_file = os.path.join(split_dir, os.path.split(split)[1] + "_qual.txt")
 
@@ -351,7 +379,11 @@ def error_calc(in_seq_files, nucl_ref_file, workdir = os.getcwd(), trace = sys.s
 			split_indel_out_files.append(split_indel_out_file)
 			split_qual_out_files.append(split_qual_out_file)
 
-			cmd = ["cafe", "-Xmx1g", error_class, nucl_ref_file, split]
+			if cafe_check == 0:
+				cmd = ["cafe", "-Xmx1g", error_class, nucl_ref_file, split]
+			else:
+				cmd = ["java", "-Xmx1g", "-jar", align_tools_jar, "compare-error-type", nucl_ref_file, split]
+			
 			if seq_file.qual_file:
 				cmd.extend([seq_file.qual_file])
 			
@@ -368,7 +400,16 @@ def error_calc(in_seq_files, nucl_ref_file, workdir = os.getcwd(), trace = sys.s
 		
 		error_summary_file = os.path.join(errors_dir, seq_file_name + "_error_summary.txt")
 		
+		qual_file_exists = False
+		stream = open(seq_file.seq_file)
+		first_char = stream.read(1)
+		if first_char == '@':
+			qual_file_exists = True
+
 		if seq_file.qual_file:
+			qual_file_exists = True
+
+		if qual_file_exists :
 			assemble_map[qual_file] = split_qual_out_files
 			parse_error_analysis_cmds.append(Command([parse_error_analysis, "-q", qual_file, pairwise_file, mismatch_file, indels_file, nucl_ref_file], error_summary_file))
 		else:
@@ -423,7 +464,7 @@ def rrna16s_decontamination(in_seq_files, ref_seq_file, cutoff = 0.1, workdir = 
 			split_out_files.append(split_out_file)
 			failed_out_files.append(failed_out_file)
 			stdout_files.append(stdout_file)
-
+			"""DOES NOT WORK"""
 			cmd = ["cafe", "-Xmx1g", decontamination_class, ref_seq_file, cutoff, split, split_out_file, failed_out_file]
 			cmds.append(Command(cmd, stdout_file))
 
@@ -609,7 +650,11 @@ def framebot(in_seq_files, prot_ref_file, min_ident=0.4, min_length=50, alignmen
 			nucl_failed_files.append(nucl_failed_file)
 			stdout_files.append(framebot_stdout)
 
-			cmd = ["cafe", "-Xmx1g", framebot_class, "--alignment-mode", alignment_model, "--identity-cutoff", min_ident, "--length-cutoff", min_length, "--result-stem", stem]
+			if cafe_check == 0:
+				cmd = ["cafe", "-Xmx1g", framebot_class, "--alignment-mode", alignment_model, "--identity-cutoff", min_ident, "--length-cutoff", min_length, "--result-stem", stem]
+			else:
+				cmd = ["java", "-Xmx1g", "-jar", framebot_jar, "framebot", "--alignment-mode", alignment_model, "--identity-cutoff", min_ident, "--length-cutoff", min_length, "--result-stem", stem]
+			
 			if not prot_ref_file.endswith(".idx"):
 				cmd.append("--no-metric-search")
 			if seq_file.qual_file:
@@ -716,7 +761,8 @@ def align(in_seq_files, gene_name, workdir = os.getcwd(), trace = sys.stderr):
 	if not check_unique_files(in_seq_files):
 		raise Exception("I won't overwrite output files, two input files have the same name. " + ", ".join(in_seq_files))
 
-	if gene_name == "16s" or gene_name == "RRNA_16S_BACTERIA" or gene_name == "RRNA_16S_ARCHAEA" or gene_name == "RRNA_28S":
+	genes = ["RRNA_16S_BACTERIA", "RRNA_16S_ARCHAEA", "RRNA_18S", "RRNA_23S", "RRNA_28S"]
+	if gene_name in genes:
 		align_cmd = cmalign
 		model = os.path.join(os.path.join(resources_dir, gene_name), "model.cm")		
 	else:
@@ -746,9 +792,9 @@ def align(in_seq_files, gene_name, workdir = os.getcwd(), trace = sys.stderr):
 			split_out_file = os.path.join(seq_dir, os.path.split(split)[1] + ".out")
 
 			cmd = [align_cmd]
-			if gene_name == "16s" or gene_name == "RRNA_16S_BACTERIA" or gene_name == "RRNA_16S_ARCHAEA" or gene_name == "RRNA_28S":
-				# for Infernal 1.1
-				cmd.extend(["-g","--noprob"])
+			genes = ["RRNA_16S_BACTERIA", "RRNA_16S_ARCHAEA", "RRNA_18S", "RRNA_23S", "RRNA_28S"]
+			if gene_name in genes:
+				cmd.extend(["-g", "--noprob"]) #new infernal changed this option
 			else:
 				cmd.append("--allcol")
 
@@ -763,12 +809,19 @@ def align(in_seq_files, gene_name, workdir = os.getcwd(), trace = sys.stderr):
 
 	merge_cmds = []
 	for k in assemble_map.keys():
-		cmd = ["cafe", "-Xmx1g", align_merger_class, assemble_map[k], k]
+
+		if cafe_check == 0:
+			cmd = ["cafe", "-Xmx1g", align_merger_class, assemble_map[k], k]
+		else:
+			cmd = ["java", "-Xmx1g", "-jar", align_tools_jar, "alignment-merger", assemble_map[k], k]
 		merge_cmds.append(Command(cmd))
 
 	for out_seq_file in out_seq_files:
-		cmd = ["cafe", "-Xmx1g", aligner_stats_class]
-		
+		if cafe_check == 0:
+			cmd = ["cafe", "-Xmx1g", aligner_stats_class]
+		else:
+			cmd = ["java", "-Xmx1g", "-cp", abundance_stats_jar, aligner_stats_class]
+			
 		if out_seq_file.idmapping:
 			cmd.extend(["-i", out_seq_file.idmapping])
 		if out_seq_file.sample_mapping:
@@ -810,8 +863,11 @@ def dereplicate(in_seq_files, unaligned = True, mask_seq = None, prefix = "all_s
 			mode = "--model-only=%s" % mask_seq
 		else:
 			mode = "--aligned"
-	
-	cmd = ["cafe", "-Xmx2g", cluster_main_class, "derep", mode, "-o", derep_file, id_file, sample_file]
+			
+	if cafe_check == 0:
+		cmd = ["cafe", "-Xmx2g", cluster_main_class, "derep", mode, "-o", derep_file, id_file, sample_file]
+	else:
+		cmd = ["java", "-Xmx2g", "-jar", cluster_class_jar, "derep", mode, "-o", derep_file, id_file, sample_file] 
 
 	qual_files = []
 	for seq_file in in_seq_files:
@@ -849,8 +905,12 @@ def distance_matrix(in_seq_files, is_nucl, mask_seq = None, cutoff = 0.15, workd
 			raise ValueError("Sequence file must have id mapping")
 	
 		matrix_file = os.path.join(dist_dir, "%s_matrix.bin" % (os.path.split(seq_file.seq_file)[1]))
-	
-		cmd = ["cafe", "-Xmx2g", cluster_main_class, "dmatrix", "--id-mapping", seq_file.idmapping, "--in", seq_file.seq_file, "--outfile", matrix_file]
+		
+		if cafe_check == 0:
+			cmd = ["cafe", "-Xmx2g", cluster_main_class, "dmatrix", "--id-mapping", seq_file.idmapping, "--in", seq_file.seq_file, "--outfile", matrix_file]
+		else:
+			cmd = ["java", "-Xmx2g", "-jar", cluster_class_jar, "dmatrix", "--id-mapping", seq_file.idmapping, "--in", seq_file.seq_file, "--outfile", matrix_file]
+			
 		if mask_seq:
 			cmd.extend(["--mask", mask_seq])
 		if not is_nucl:
@@ -878,15 +938,22 @@ def cluster(in_files, clust_method = "complete", step = 0.01, workdir = os.getcw
 			raise ValueError("Sequence file must have id and sample mapping")
 
 		clust_file = os.path.join(clust_dir, os.path.split(matrix_file.seq_file)[1].replace("_matrix.bin", "") + "_" + clust_method + ".clust")
-		cmd = ["cafe", "-Xmx2g", cluster_main_class, "cluster", "--method", clust_method, "--id-mapping", matrix_file.idmapping, "--sample-mapping", matrix_file.sample_mapping, "--dist-file", matrix_file.seq_file, "--outfile", clust_file, "--step", step]
-		
+		if cafe_check == 0:
+			cmd = ["cafe", "-Xmx2g", cluster_main_class, "cluster", "--method", clust_method, "--id-mapping", matrix_file.idmapping, "--sample-mapping", matrix_file.sample_mapping, "--dist-file", matrix_file.seq_file, "--outfile", clust_file, "--step", step]
+		else:
+			cmd = ["java", "-Xmx2g", "-jar", cluster_class_jar, "cluster", "--method", clust_method, "--id-mapping", matrix_file.idmapping, "--sample-mapping", matrix_file.sample_mapping, "--dist-file", matrix_file.seq_file, "--outfile", clust_file, "--step", step]
+			
 		run_commands([Command(cmd)], trace)
 
 		ret.append(SequenceFile(clust_file, matrix_file.qual_file, matrix_file.idmapping, matrix_file.sample_mapping))
 
 		os.remove(matrix_file.seq_file)	#these things are huge and not very useful to the user...
 		
-	cmd = ["cafe", "-Xmx2g", cluster_stats_class, clust_dir]
+	if cafe_check == 0:
+		cmd = ["cafe", "-Xmx2g", cluster_stats_class, clust_dir]
+	else:
+		cmd = ["java", "-Xmx2g", "-cp", abundance_stats_jar, cluster_stats_class, clust_dir]
+		
 	cmd.extend([x.seq_file for x in ret])
 	run_commands([Command(cmd)], trace)
 
@@ -902,7 +969,12 @@ def rep_seqs(in_clust_files, aligned_seq_file, cutoff, mask_seq = None, out_dir 
 	clust_file = in_clust_files[0].seq_file
 	cutoff = str(cutoff)
 	
-	cmd = ["cafe", "-Xmx2g", cluster_main_class, "rep-seqs", "--out", rep_seq_dir]
+	if cafe_check == 0:
+		cmd = ["cafe", "-Xmx2g", cluster_main_class, "rep-seqs", "--out", rep_seq_dir]
+	else:
+		cmd = ["java", "-Xmx2g", "-jar", cluster_class_jar, "rep-seqs", "--out", rep_seq_dir]
+	
+	
 	if mask_seq:
 		cmd.append("--mask-seq=%s" % mask_seq)
 	if aligned_seq_file.idmapping:
@@ -931,7 +1003,10 @@ def refresh_mappings(in_seq_files, out_dir="filtered_mapping", workdir = os.getc
 	
 	new_id_mapping = os.path.join(mapping_dir, "filtered_ids.txt")
 	new_sample_mapping = os.path.join(mapping_dir, "filtered_samples.txt")
-	cmd = ["cafe", "-Xmx2g", cluster_main_class, "refresh-mappings", seq_file.seq_file, seq_file.idmapping, seq_file.sample_mapping, new_id_mapping, new_sample_mapping]
+	if cafe_check == 0:
+		cmd = ["cafe", "-Xmx2g", cluster_main_class, "refresh-mappings", seq_file.seq_file, seq_file.idmapping, seq_file.sample_mapping, new_id_mapping, new_sample_mapping]
+	else:
+		cmd = ["java", "-Xmx2g", "-jar", cluster_class_jar, "refresh-mappings", seq_file.seq_file, seq_file.idmapping, seq_file.sample_mapping, new_id_mapping, new_sample_mapping]
 	
 	run_commands([Command(cmd)], trace)
 	
@@ -952,7 +1027,10 @@ def explode_mappings(in_seq_files, out_dir="explode_mappings", workdir = os.getc
 	explode_dir = os.path.join(workdir, out_dir)
 	os.mkdir(explode_dir)
 	
-	cmd = ["cafe", "-Xmx2g", cluster_main_class, "explode-mappings", "-w", "-o", explode_dir, seq_file.idmapping, seq_file.sample_mapping, seq_file.seq_file]
+	if cafe_check == 0:
+		cmd = ["cafe", "-Xmx2g", cluster_main_class, "explode-mappings", "-w", "-o", explode_dir, seq_file.idmapping, seq_file.sample_mapping, seq_file.seq_file]
+	else:
+		cmd = ["java", "-Xmx2g", "-jar", cluster_class_jar, "explode-mappings", "-w", "-o", explode_dir, seq_file.idmapping, seq_file.sample_mapping, seq_file.seq_file]
 	
 	run_commands([Command(cmd)], trace)
 	
@@ -972,8 +1050,10 @@ def jaccard_sorensen(cluster_files, min_cutoff = 0, max_cutoff = 0.15, out_dir="
 	js_dir = os.path.join(workdir, out_dir)
 	os.mkdir(js_dir)
 	
-	cmd = ["cafe", "-Xmx2g", jaccard_sorensen_class, "--jaccard", "--sorensen", "--lower-cutoff", min_cutoff, "--upper-cutoff", max_cutoff, "-r", js_dir]
-
+	if cafe_check == 0:
+		cmd = ["cafe", "-Xmx2g", jaccard_sorensen_class, "--jaccard", "--sorensen", "--lower-cutoff", min_cutoff, "--upper-cutoff", max_cutoff, "-r", js_dir]
+	else:
+		cmd = ["java", "-Xmx2g", "-jar", abundance_stats_jar, "--jaccard", "--sorensen", "--lower-cutoff", min_cutoff, "--upper-cutoff", max_cutoff, "-r", js_dir]
 	if os.path.exists("/usr/bin/R"):
 		cmd.extend(["--R-location", "/usr/bin/R"])
 
@@ -995,8 +1075,11 @@ def shannon_chao1(cluster_files, out_dir="shannon_chao1", workdir = os.getcwd(),
 	out_file = os.path.join(shannon_chao_dir, out_file)
 	os.mkdir(shannon_chao_dir)
 	
-	cmd = ["cafe", "-Xmx2g", shannon_chao_class, cluster_file.seq_file, out_file]
-	
+
+	if cafe_check == 0:
+		cmd = ["cafe", "-Xmx2g", shannon_chao_class, cluster_file.seq_file, out_file]
+	else:
+		cmd = ["java", "-cp", abundance_stats_jar, shannon_chao_class, cluster_file.seq_file, out_file]
 	run_commands([Command(cmd)], trace)
 	
 	return None
@@ -1010,8 +1093,11 @@ def rarefaction(cluster_files, out_dir="rarefaction", workdir = os.getcwd(), tra
 	rarefaction_dir = os.path.join(workdir, out_dir)
 	os.mkdir(rarefaction_dir)
 	
-	cmd = ["cafe", "-Xmx2g", rarefaction_class, cluster_file.seq_file, rarefaction_dir, "true"]
-	
+	if cafe_check == 0:
+		cmd = ["cafe", "-Xmx2g", rarefaction_class, cluster_file.seq_file, rarefaction_dir, "true"]
+	else:
+		cmd = ["java", "-Xmx2g", "-cp", abundance_stats_jar, rarefaction_class, cluster_file.seq_file, rarefaction_dir, "true"]
+		
 	run_commands([Command(cmd)], trace)
 	
 	return None

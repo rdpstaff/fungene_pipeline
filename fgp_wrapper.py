@@ -18,13 +18,22 @@ def check_seq_counts(seq_files):
 
 def check_seq_counts_file(seq_file):
 	total_seqs = 0
-	for seq in SeqIO.parse(open(seq_file), "fasta"):
+	stream = open(seq_file)
+	first_char = stream.read(1)
+	if first_char == "@":
+		format = "fastq"
+	else:
+		format = "fasta"
+	stream.close()
+
+	for seq in SeqIO.parse(open(seq_file), format):
 		if seq.id[0] != "#":
 			total_seqs += 1
 	return total_seqs
 
 def send_mail(email_address, subject, mail_file):
-	pass
+	cmd = ["cafe", mail_wrapper_class, "--to_email", email_address, "--subject_name", subject, "--message_file", mail_file]
+	subprocess.call(cmd)
 
 def main(options_file, command_file, infiles):
 	seq_files = []
