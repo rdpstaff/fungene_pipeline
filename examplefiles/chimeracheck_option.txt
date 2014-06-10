@@ -1,4 +1,4 @@
-16s
+RRNA_16S_BACTERIA
 /path/to/output_dir
 /path/to/output_dir/results
 youremail@domain

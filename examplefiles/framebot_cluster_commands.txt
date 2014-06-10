@@ -1,8 +1,12 @@
 dereplicate	unaligned
-framebot	glocal	80	0.4
-refresh_mapping
-explode_mapping	filtered_sequences
+chimera_check
+refresh_mapping chimera_filtered
+framebot	glocal	100 0.3
+refresh_mapping framebot_filtered
 align
-dereplicate	aligned	#=GC_RF
-distance	0.3	
+distance	0.3	0.20 #=GC_RF
 cluster	complete	0.01
+jaccard_sorensen    0.1    0.0
+shannon_chao
+rarefaction
+explode_mapping filtered_sequences
