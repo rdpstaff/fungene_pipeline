@@ -342,8 +342,8 @@ def init_process(seq_files, tag_file, forward_primers, fedit = 2, reverse_primer
 
 		if os.path.isdir(os.path.join(init_proc_dir, f)):
 			stem = os.path.join(os.path.join(init_proc_dir, f), f) + "_trimmed"
-			if os.path.exists(stem + ".qual"):
-				seq_files.append(SequenceFile(stem + ".fasta", stem + ".qual", seq_file.idmapping, seq_file.sample_mapping))
+			if os.path.exists(stem + ".fastq"):
+				seq_files.append(SequenceFile(stem + ".fastq", None, seq_file.idmapping, seq_file.sample_mapping))
 			else:
 				seq_files.append(SequenceFile(stem + ".fasta", None, seq_file.idmapping, seq_file.sample_mapping))
 	

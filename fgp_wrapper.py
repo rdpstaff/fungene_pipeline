@@ -111,7 +111,7 @@ def main(options_file, command_file, infiles):
 				status_stream.flush()
 				total_seqs = check_seq_counts(seq_files)
 				if (total_seqs < min_seqs) or (total_seqs > max_seqs):
-					status_stream.write("Failed seq count check total_seqs=%s (min_seqs: %s, max_seqs: %s)\n" % (total_seqs, min_seqs, max_seqs))
+					status_stream.write(" Error occurred: Minimum amount of sequences allowed: %s, Maximum amount of sequences allowed: %s, Total sequences from last step: %s.\n" % (min_seqs, max_seqs, total_seqs))
 					status_stream.flush()
 					raise Exception()
 				else:
