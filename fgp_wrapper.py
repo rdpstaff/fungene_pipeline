@@ -122,11 +122,12 @@ def main(options_file, command_file, infiles):
 				alignment_mode = lexemes[1]
 				min_length = lexemes[2]
 				min_ident = lexemes[3]
-				
+                		de_novo = lexemes[4]
+
 				status_stream.write("Running framebot")
-				if len(lexemes) == 5:
+				if len(lexemes) == 6:
 					status_stream.write(" with custom reference file")
-					framebot_ref = lexemes[4]
+					framebot_ref = lexemes[5]
 				else:
 					framebot_ref = os.path.join(pipeline_core.resources_dir, gene_name + "/framebot.idx")
 					if not os.path.exists(framebot_ref):	
@@ -136,7 +137,7 @@ def main(options_file, command_file, infiles):
 				
 				status_stream.write("...")
 				status_stream.flush()
-				seq_files = pipeline_core.framebot(seq_files, framebot_ref, min_ident, min_length, alignment_mode, False, workdir, trace)
+				seq_files = pipeline_core.framebot(seq_files, framebot_ref, min_ident, min_length, alignment_mode, de_novo, False, workdir, trace)
 				status_stream.write("Done\n")
 				status_stream.flush()
 			elif lexemes[0] == "align":
@@ -150,23 +151,21 @@ def main(options_file, command_file, infiles):
 				derep_mode = lexemes[1]
 				mask_seq = None
 				prefix = "all_seqs"
-
 				if derep_mode == "unaligned":
 					unaligned = True
 
-					if len(lexemes) == 3:
-						prefix = lexemes[2]
+					if len(lexemes) == 4:
+						prefix = lexemes[3]
 				elif derep_mode == "aligned":
 					unaligned = False
 
-					if len(lexemes) > 2:
-						mask_seq = lexemes[2]
 					if len(lexemes) > 3:
-						prefix = lexemes[3]
-
+						mask_seq = lexemes[3]
+					if len(lexemes) > 4:
+						prefix = lexemes[4]
 				status_stream.write("Dereplicating %s sequences..." % derep_mode)
 				status_stream.flush()
-				seq_files = pipeline_core.dereplicate(seq_files, unaligned, mask_seq, prefix, workdir, trace)
+				seq_files = pipeline_core.dereplicate(seq_files, unaligned, lexemes[2], mask_seq, prefix, workdir, trace)
 				status_stream.write("done\n")
 				status_stream.flush()
 			elif lexemes[0] == "error_analysis":
@@ -276,17 +275,18 @@ def main(options_file, command_file, infiles):
 				status_stream.flush()
 				
 				cutoff = lexemes[1]
-				if len(lexemes) > 2:
-					mask_seq = lexemes[2]
+                                use_cluster_id = lexemes[2]
+				if len(lexemes) > 3:
+					mask_seq = lexemes[3]
 				else:
 					mask_seq = None
 					
-				if len(lexemes) > 3:
-					ref_seqs = SequenceFile(os.path.abspath(lexemes[3]))
+				if len(lexemes) > 4:
+					ref_seqs = SequenceFile(os.path.abspath(lexemes[4]))
 				else:
 					ref_seqs = seq_files[0]
 				
-				pipeline_core.rep_seqs(cluster_files, ref_seqs, cutoff, mask_seq, "rep_seqs_%s" % cutoff, workdir = workdir, trace = trace)
+				pipeline_core.rep_seqs(cluster_files, ref_seqs, cutoff, use_cluster_id, mask_seq, "rep_seqs_%s" % cutoff, workdir = workdir, trace = trace)
 				
 				status_stream.write("done\n")
 				status_stream.flush()

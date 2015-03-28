@@ -593,7 +593,7 @@ def blast_decontamination(in_seq_files, prot_controls, cutoff = 50, workdir = os
 					
 	return out_seq_files
 
-def framebot(in_seq_files, prot_ref_file, min_ident=0.4, min_length=50, alignment_model="glocal", blast_failed_seqs = False, workdir=os.getcwd(), trace=sys.stderr):
+def framebot(in_seq_files, prot_ref_file, min_ident=0.4, min_length=50, alignment_model="glocal", de_novo=False, blast_failed_seqs = False, workdir=os.getcwd(), trace=sys.stderr):
 	"""
 	Runs framebot on the given sequence files
 	
@@ -651,10 +651,13 @@ def framebot(in_seq_files, prot_ref_file, min_ident=0.4, min_length=50, alignmen
 			stdout_files.append(framebot_stdout)
 
 			if cafe_check == 0:
-				cmd = ["cafe", "-Xmx1g", framebot_class, "--alignment-mode", alignment_model, "--identity-cutoff", min_ident, "--length-cutoff", min_length, "--result-stem", stem]
+				cmd = ["cafe", "-Xmx1g", framebot_class, "--alignment-mode", alignment_model, "--identity-cutoff", min_ident, "--length-cutoff", min_length, "--result-stem", stem ]
 			else:
-				cmd = ["java", "-Xmx1g", "-jar", framebot_jar, "framebot", "--alignment-mode", alignment_model, "--identity-cutoff", min_ident, "--length-cutoff", min_length, "--result-stem", stem]
-			
+				cmd = ["java", "-Xmx1g", "-jar", framebot_jar, "framebot", "--alignment-mode", alignment_model, "--identity-cutoff", min_ident, "--length-cutoff", min_length, "--result-stem", stem ]
+		
+			if  de_novo.lower() == "true":
+ 				cmd.append("--de-novo")
+	
 			if not prot_ref_file.endswith(".idx"):
 				cmd.append("--no-metric-search")
 			if seq_file.qual_file:
@@ -838,7 +841,7 @@ def align(in_seq_files, gene_name, workdir = os.getcwd(), trace = sys.stderr):
 
 	return out_seq_files
 
-def dereplicate(in_seq_files, unaligned = True, mask_seq = None, prefix = "all_seqs", workdir = os.getcwd(), trace = sys.stderr):
+def dereplicate(in_seq_files, unaligned = True, sorted_opt = "False", mask_seq = None, prefix = "all_seqs", workdir = os.getcwd(), trace = sys.stderr):
 	"""
 	Dereplicates the given files in to a single nonredundant file
 	resulting SequenceFile has the idmapping and sample_mapping fields
@@ -853,7 +856,6 @@ def dereplicate(in_seq_files, unaligned = True, mask_seq = None, prefix = "all_s
 	qual_file = os.path.join(workdir, "%s_derep.qual" % prefix)
 	id_file = os.path.join(workdir, "%s.ids" % prefix)
 	sample_file = os.path.join(workdir, "%s.samples" % prefix)
-
 	if unaligned:
 		if mask_seq:
 			sys.stderr.write("Specified mask sequence and unaligned...ignoring mask sequence\n")
@@ -865,9 +867,15 @@ def dereplicate(in_seq_files, unaligned = True, mask_seq = None, prefix = "all_s
 			mode = "--aligned"
 			
 	if cafe_check == 0:
-		cmd = ["cafe", "-Xmx2g", cluster_main_class, "derep", mode, "-o", derep_file, id_file, sample_file]
+		if sorted_opt.lower() == "true":
+			cmd = ["cafe", "-Xmx2g", cluster_main_class, "derep", mode, "-s", "-o", derep_file, id_file, sample_file]
+		else:
+			cmd = ["cafe", "-Xmx2g", cluster_main_class, "derep", mode,  "-o", derep_file, id_file, sample_file]
 	else:
-		cmd = ["java", "-Xmx2g", "-jar", cluster_class_jar, "derep", mode, "-o", derep_file, id_file, sample_file] 
+		if sorted_opt.lower() == "true":
+			cmd = ["java", "-Xmx2g", "-jar", cluster_class_jar, "derep", mode, "-s", "-o", derep_file, id_file, sample_file] 
+		else:	
+			cmd = ["java", "-Xmx2g", "-jar", cluster_class_jar, "derep", mode, "-o", derep_file, id_file, sample_file] 
 
 	qual_files = []
 	for seq_file in in_seq_files:
@@ -959,7 +967,7 @@ def cluster(in_files, clust_method = "complete", step = 0.01, workdir = os.getcw
 
 	return ret
 
-def rep_seqs(in_clust_files, aligned_seq_file, cutoff, mask_seq = None, out_dir = "representative_seqs", workdir = os.getcwd(), trace = sys.stderr):
+def rep_seqs(in_clust_files, aligned_seq_file, cutoff, use_cluster_id, mask_seq = None, out_dir = "representative_seqs", workdir = os.getcwd(), trace = sys.stderr):
 	rep_seq_dir = os.path.join(workdir, out_dir)
 	os.mkdir(rep_seq_dir)
 	
@@ -979,6 +987,8 @@ def rep_seqs(in_clust_files, aligned_seq_file, cutoff, mask_seq = None, out_dir 
 		cmd.append("--mask-seq=%s" % mask_seq)
 	if aligned_seq_file.idmapping:
 		cmd.extend(["--id-mapping", aligned_seq_file.idmapping])
+        if use_cluster_id == "true":
+                cmd.append("-c")
 	
 	cmd.extend([in_clust_files[0].seq_file, cutoff, aligned_seq_file.seq_file])
 	run_commands([Command(cmd)], trace)
