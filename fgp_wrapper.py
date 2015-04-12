@@ -151,21 +151,22 @@ def main(options_file, command_file, infiles):
 				derep_mode = lexemes[1]
 				mask_seq = None
 				prefix = "all_seqs"
+				sorted_opt = "False"
 				if derep_mode == "unaligned":
 					unaligned = True
-
+					sorted_opt = lexemes[2]
 					if len(lexemes) == 4:
 						prefix = lexemes[3]
 				elif derep_mode == "aligned":
 					unaligned = False
 
+					if len(lexemes) > 2:
+						mask_seq = lexemes[2]
 					if len(lexemes) > 3:
-						mask_seq = lexemes[3]
-					if len(lexemes) > 4:
-						prefix = lexemes[4]
+						prefix = lexemes[3]
 				status_stream.write("Dereplicating %s sequences..." % derep_mode)
 				status_stream.flush()
-				seq_files = pipeline_core.dereplicate(seq_files, unaligned, lexemes[2], mask_seq, prefix, workdir, trace)
+				seq_files = pipeline_core.dereplicate(seq_files, unaligned, sorted_opt, mask_seq, prefix, workdir, trace)
 				status_stream.write("done\n")
 				status_stream.flush()
 			elif lexemes[0] == "error_analysis":
