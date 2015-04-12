@@ -1,2 +1,2 @@
-dereplicate	unaligned
+dereplicate	unaligned	false
 chimera_check

@@ -1,7 +1,7 @@
-dereplicate	unaligned
+dereplicate	unaligned	false
 chimera_check
 refresh_mapping chimera_filtered
-framebot	glocal	100 0.3
+framebot	glocal	100 0.3	false
 refresh_mapping framebot_filtered
 align
 distance	0.3	0.20 #=GC_RF

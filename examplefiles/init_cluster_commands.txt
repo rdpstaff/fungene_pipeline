@@ -1,5 +1,5 @@
 init_proc	AYTGGGYDTAAAGNG	2	300	0	20	/path/to/fungene_pipeline/examplefiles/16S_tag.txt 	false	false	CCGTCAATTCMTTTRAGT	0
-dereplicate	unaligned
+dereplicate	unaligned	false
 chimera_check
 refresh_mapping chimera_filtered
 align

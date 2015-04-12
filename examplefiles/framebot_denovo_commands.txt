@@ -1,0 +1,4 @@
+dereplicate	unaligned	true
+framebot	glocal	80	0.4	true	
+refresh_mapping
+explode_mapping	filtered_sequences

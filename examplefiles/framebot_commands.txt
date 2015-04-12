@@ -1,4 +1,4 @@
-dereplicate	unaligned
-framebot	glocal	80	0.4
+dereplicate	unaligned	false
+framebot	glocal	80	0.4	false
 refresh_mapping
 explode_mapping	filtered_sequences
