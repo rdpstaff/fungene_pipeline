@@ -799,7 +799,8 @@ def align(in_seq_files, gene_name, workdir = os.getcwd(), trace = sys.stderr):
 			if gene_name in genes:
 				cmd.extend(["-g", "--noprob"]) #new infernal changed this option
 			else:
-				cmd.append("--allcol")
+				#cmd.append("--allcol")
+				pass
 
 			cmd.extend(["-o", split_out_file, model, split])
 			cmds.append(Command(cmd))
