@@ -32,8 +32,9 @@ def check_seq_counts_file(seq_file):
 	return total_seqs
 
 def send_mail(email_address, subject, mail_file):
-	cmd = ["cafe", mail_wrapper_class, "--to_email", email_address, "--subject_name", subject, "--message_file", mail_file]
-	subprocess.call(cmd)
+	#cmd = ["cafe", mail_wrapper_class, "--to_email", email_address, "--subject_name", subject, "--message_file", mail_file]
+	#subprocess.call(cmd)
+	pass
 
 def main(options_file, command_file, infiles):
 	seq_files = []
